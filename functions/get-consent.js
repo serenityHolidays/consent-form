@@ -1,5 +1,3 @@
-const https = require('https');
-
 const ZAPIKEY  = '1003.8f0da447a3c4a002abce3cdb11b48c8c.e62123d416ecdadfb7e4fbd009aa6805';
 const ZOHO_URL = 'https://www.zohoapis.eu/crm/v7/functions/get_consent_data/actions/execute';
 
@@ -9,46 +7,41 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-function zohoGet(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
-      let raw = '';
-      res.on('data', chunk => { raw += chunk; });
-      res.on('end', () => {
-        try { resolve(JSON.parse(raw)); }
-        catch (e) { reject(new Error('Bad JSON from Zoho: ' + raw.slice(0, 200))); }
-      });
-    }).on('error', reject);
-  });
-}
+export async function onRequest(context) {
+  const { request } = context;
 
-exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: CORS, body: '' };
+  if (request.method === 'OPTIONS') {
+    return new Response('', { status: 200, headers: CORS });
   }
 
-  const contactId = (event.queryStringParameters || {}).contact_id || '';
+  const contactId = new URL(request.url).searchParams.get('contact_id') || '';
   if (!contactId) {
-    return { statusCode: 400, headers: CORS,
-             body: JSON.stringify({ status: 'error', message: 'contact_id is required' }) };
+    return new Response(
+      JSON.stringify({ status: 'error', message: 'contact_id is required' }),
+      { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
     const url  = `${ZOHO_URL}?auth_type=apikey&zapikey=${ZAPIKEY}&contact_id=${encodeURIComponent(contactId)}`;
-    const json = await zohoGet(url);
-    // Zoho wraps the function's return value in details.output as a JSON string
+    const res  = await fetch(url);
+    const json = await res.json();
+
     let data;
     if (json.details && json.details.output) {
-      try { data = JSON.parse(json.details.output); }
-      catch (e) { data = json.details; }
+      try { data = JSON.parse(json.details.output); } catch (e) { data = json.details; }
     } else {
       data = json.details || json;
     }
-    return { statusCode: 200,
-             headers: { ...CORS, 'Content-Type': 'application/json' },
-             body: JSON.stringify(data) };
+
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    });
   } catch (err) {
-    return { statusCode: 500, headers: CORS,
-             body: JSON.stringify({ status: 'error', message: err.message }) };
+    return new Response(
+      JSON.stringify({ status: 'error', message: err.message }),
+      { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
+    );
   }
-};
+}
