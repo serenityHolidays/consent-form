@@ -118,6 +118,57 @@
       display: block;
     }
 
+    .prefs-section {
+      margin-top: 28px;
+      padding: 20px;
+      border: 1px solid #e8e0d4;
+      border-radius: 3px;
+      background: #fdfaf5;
+    }
+
+    .prefs-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #444;
+      margin-bottom: 4px;
+    }
+
+    .prefs-subtitle {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 14px;
+    }
+
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip { cursor: pointer; }
+
+    .chip input[type="checkbox"] {
+      display: none;
+    }
+
+    .chip span {
+      display: inline-block;
+      padding: 6px 14px;
+      border: 1px solid #c8b99a;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #555;
+      background: #fff;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+
+    .chip input:checked + span {
+      background: #6b5c3e;
+      color: #fff;
+      border-color: #6b5c3e;
+    }
+
     .loading {
       text-align: center;
       padding: 40px;
@@ -134,11 +185,18 @@
     const GET_URL  = '/.netlify/functions/get-consent';
     const POST_URL = '/.netlify/functions/submit-consent';
 
+    const HOLIDAY_PREFS = [
+      'All-inclusive','Luxury','Birdwatching','Couples','Family',
+      'Island hopping','Tours','Walking','Senegal','Villa',
+      'Apartment','Hotel','Flight only','Gatwick','Bristol',
+      'East Midlands','Birmingham','Heathrow'
+    ];
+
     const BRANDS = [
-      { id: 'corsica',    label: 'Corsican Places',          logo: '/logo-corsica.png',    param: 'corsica_email' },
-      { id: 'goa',        label: 'The Goa Experience',              logo: '/logo-goa.png',        param: 'goa_email' },
-      { id: 'cape_verde', label: 'The Cape Verde Experience',        logo: '/logo-cape-verde.png', param: 'cape_verde_email' },
-      { id: 'gambia',     label: 'The Gambia Experience',        logo: '/logo-gambia.png',     param: 'gambia_email' },
+      { id: 'corsica',    label: 'Corsica',          logo: '/logo-corsica.png',    param: 'corsica_email' },
+      { id: 'goa',        label: 'Goa',              logo: '/logo-goa.png',        param: 'goa_email' },
+      { id: 'cape_verde', label: 'Cape Verde',        logo: '/logo-cape-verde.png', param: 'cape_verde_email' },
+      { id: 'gambia',     label: 'The Gambia',        logo: '/logo-gambia.png',     param: 'gambia_email' },
       { id: 'sardinia',   label: 'Sardinian Places',  logo: '/logo-sardinia.png',   param: 'sardinia_email' }
     ];
   </script>
@@ -152,6 +210,13 @@
       brands you would like to hear from by email, then click Save.
     </p>
     <div id="brands-container"></div>
+
+    <div class="prefs-section">
+      <div class="prefs-title">Holiday Preferences</div>
+      <div class="prefs-subtitle">Select all that apply</div>
+      <div class="chips-container" id="prefs-chips"></div>
+    </div>
+
     <button class="btn" id="save-btn" onclick="savePreferences()">Save Preferences</button>
     <div class="message" id="message"></div>
   </div>
@@ -194,6 +259,25 @@
       container.appendChild(section);
     });
 
+    // Populate holiday preference chips
+    var selected = (data.holiday_preferences || '').split(';').map(function(s){ return s.trim(); });
+    var chipsContainer = document.getElementById('prefs-chips');
+    chipsContainer.innerHTML = '';
+    HOLIDAY_PREFS.forEach(function(pref) {
+      var label = document.createElement('label');
+      label.className = 'chip';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = pref;
+      cb.name = 'holiday_pref';
+      if (selected.indexOf(pref) !== -1) cb.checked = true;
+      var span = document.createElement('span');
+      span.textContent = pref;
+      label.appendChild(cb);
+      label.appendChild(span);
+      chipsContainer.appendChild(label);
+    });
+
     document.getElementById('form-content').style.display = 'block';
   }
 
@@ -234,6 +318,12 @@
       var cb = document.getElementById('cb_' + brand.id);
       body[brand.param] = cb ? String(cb.checked) : 'false';
     });
+    // Collect selected holiday preferences as semicolon-separated string
+    var selectedPrefs = [];
+    document.querySelectorAll('#prefs-chips input:checked').forEach(function(cb) {
+      selectedPrefs.push(cb.value);
+    });
+    body.holiday_preferences = selectedPrefs.join(';');
 
     try {
       var res  = await fetch(POST_URL, {
