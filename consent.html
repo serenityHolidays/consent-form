@@ -41,10 +41,7 @@
       line-height: 1.5;
     }
 
-    .contact-name {
-      font-weight: bold;
-      color: #333;
-    }
+    .contact-name { font-weight: bold; color: #333; }
 
     .brand-section {
       margin-bottom: 20px;
@@ -61,11 +58,7 @@
       color: #444;
     }
 
-    .consent-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .consent-row { display: flex; align-items: center; gap: 10px; }
 
     .consent-row input[type="checkbox"] {
       width: 18px;
@@ -134,25 +127,9 @@
 <div class="card">
 
   <script>
-    // ── Config ───────────────────────────────────────────────────
-    // Set SANDBOX to false when you go to production.
-    // Sandbox:    sandbox.zohoapis.eu
-    // Production: www.zohoapis.eu
-    const CONFIG = {
-      SANDBOX:   false,
-      ZAPIKEY:   '1003.8f0da447a3c4a002abce3cdb11b48c8c.e62123d416ecdadfb7e4fbd009aa6805',
-      get DOMAIN() {
-        return this.SANDBOX
-          ? 'https://sandbox.zohoapis.eu'
-          : 'https://www.zohoapis.eu';
-      },
-      get GET_URL() {
-        return `${this.DOMAIN}/crm/v7/functions/get_consent_data/actions/execute?auth_type=apikey&zapikey=${this.ZAPIKEY}`;
-      },
-      get POST_URL() {
-        return `${this.DOMAIN}/crm/v7/functions/submit_consent/actions/execute?auth_type=apikey&zapikey=${this.ZAPIKEY}`;
-      }
-    };
+    // Calls Netlify proxy functions — no CORS issues
+    const GET_URL  = '/.netlify/functions/get-consent';
+    const POST_URL = '/.netlify/functions/submit-consent';
 
     const BRANDS = [
       { id: 'corsica',    label: 'Corsica',    param: 'corsica_email' },
@@ -171,9 +148,7 @@
       Hello <span id="contact-name" class="contact-name"></span>. Please tick the
       brands you would like to hear from by email, then click Save.
     </p>
-
     <div id="brands-container"></div>
-
     <button class="btn" id="save-btn" onclick="savePreferences()">Save Preferences</button>
     <div class="message" id="message"></div>
   </div>
@@ -198,10 +173,10 @@
 
   function showForm(data) {
     document.getElementById('loading').style.display = 'none';
-    const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || 'there';
+    var name = [data.first_name, data.last_name].filter(Boolean).join(' ') || 'there';
     document.getElementById('contact-name').textContent = name;
 
-    const container = document.getElementById('brands-container');
+    var container = document.getElementById('brands-container');
     container.innerHTML = '';
     BRANDS.forEach(function(brand) {
       var isChecked = data[brand.param] === true || data[brand.param] === 'true';
@@ -232,9 +207,8 @@
       return;
     }
     try {
-      var res  = await fetch(CONFIG.GET_URL + '&contact_id=' + encodeURIComponent(contactId));
-      var json = await res.json();
-      var data = (json.details) ? json.details : json;
+      var res  = await fetch(GET_URL + '?contact_id=' + encodeURIComponent(contactId));
+      var data = await res.json();
       if (data.status === 'error') {
         showError(data.message || 'Could not load your preferences. Please try again later.');
       } else {
@@ -259,14 +233,12 @@
     });
 
     try {
-      var res  = await fetch(CONFIG.POST_URL, {
+      var res  = await fetch(POST_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body)
+        body:    JSON.stringify(body),
       });
-      var json = await res.json();
-      var data = (json.details) ? json.details : json;
-
+      var data = await res.json();
       if (data.status === 'error') {
         setMessage('error', data.message || 'Something went wrong. Please try again.');
       } else {
