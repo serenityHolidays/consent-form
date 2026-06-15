@@ -48,7 +48,13 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || '{}');
     const url  = `${ZOHO_URL}?auth_type=apikey&zapikey=${ZAPIKEY}`;
     const json = await zohoPost(url, body);
-    const data = json.details || json;
+    let data;
+    if (json.details && json.details.output) {
+      try { data = JSON.parse(json.details.output); }
+      catch (e) { data = json.details; }
+    } else {
+      data = json.details || json;
+    }
     return { statusCode: 200,
              headers: { ...CORS, 'Content-Type': 'application/json' },
              body: JSON.stringify(data) };
