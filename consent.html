@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- UPDATED: Rewritten for individual brand checkbox fields (new architecture) -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marketing Preferences</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: #f5f3ef;
+      color: #2c2c2c;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px 60px;
+    }
+
+    .card {
+      background: #fff;
+      max-width: 620px;
+      width: 100%;
+      border-radius: 4px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.09);
+      overflow: hidden;
+    }
+
+    /* ── Header ───────────────────────────────────────────── */
+    .card-header {
+      background: #1a3a2a;
+      color: #fff;
+      padding: 32px 36px 28px;
+    }
+    .card-header h1 {
+      font-size: 1.5rem;
+      font-weight: normal;
+      letter-spacing: 0.03em;
+      margin-bottom: 6px;
+    }
+    .card-header p {
+      font-size: 0.88rem;
+      opacity: 0.75;
+      font-family: Arial, sans-serif;
+    }
+
+    /* ── Body ─────────────────────────────────────────────── */
+    .card-body {
+      padding: 32px 36px;
+    }
+
+    .intro {
+      font-family: Arial, sans-serif;
+      font-size: 0.93rem;
+      line-height: 1.6;
+      color: #444;
+      margin-bottom: 28px;
+    }
+
+    /* ── Brand card ───────────────────────────────────────── */
+    .brand-section {
+      border: 1px solid #e0ddd8;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .brand-title {
+      background: #f0ede8;
+      padding: 11px 20px;
+      font-family: Arial, sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #1a3a2a;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      font-family: Arial, sans-serif;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    .brand-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #1a3a2a;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .brand-row label { cursor: pointer; line-height: 1.3; }
+
+    /* ── Legal note ───────────────────────────────────────── */
+    .legal {
+      font-family: Arial, sans-serif;
+      font-size: 0.78rem;
+      color: #888;
+      line-height: 1.5;
+      margin-top: 20px;
+      margin-bottom: 28px;
+    }
+
+    /* ── Submit button ────────────────────────────────────── */
+    .btn-submit {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #1a3a2a;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: Arial, sans-serif;
+      font-size: 1rem;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: #122a1e; }
+    .btn-submit:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+
+    /* ── States ───────────────────────────────────────────── */
+    #state-loading, #state-success, #state-error {
+      display: none;
+      padding: 60px 36px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e0ddd8;
+      border-top-color: #1a3a2a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #state-loading p { color: #666; font-size: 0.9rem; }
+
+    #state-success .tick {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+    #state-success h2 {
+      font-family: Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: normal;
+      margin-bottom: 10px;
+      color: #1a3a2a;
+    }
+    #state-success p { color: #555; font-size: 0.9rem; line-height: 1.6; }
+
+    #state-error .cross { font-size: 3rem; margin-bottom: 16px; }
+    #state-error h2 {
+      font-family: Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: normal;
+      margin-bottom: 10px;
+      color: #8b2020;
+    }
+    #state-error p { color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Loading -->
+  <div id="state-loading">
+    <div class="spinner"></div>
+    <p>Loading your preferences&hellip;</p>
+  </div>
+
+  <!-- Success -->
+  <div id="state-success">
+    <div class="tick">&#10003;</div>
+    <h2>Thank you!</h2>
+    <p>Your marketing preferences have been saved.<br>
+       You can close this page.</p>
+  </div>
+
+  <!-- Error -->
+  <div id="state-error">
+    <div class="cross">&#10007;</div>
+    <h2>Something went wrong</h2>
+    <p>We couldn&rsquo;t load your preferences.<br>
+       Please contact us directly if this problem persists.</p>
+  </div>
+
+  <!-- Form (hidden until data loads) -->
+  <div id="state-form" style="display:none">
+    <div class="card-header">
+      <h1>Marketing Preferences</h1>
+      <p id="contact-greeting">Please select how you&rsquo;d like to hear from us</p>
+    </div>
+
+    <div class="card-body">
+      <p class="intro">
+        Please tell us which types of marketing you&rsquo;d like to receive for each of
+        your holidays. Tick the channels you&rsquo;re happy with &mdash; unticking a box
+        will remove that preference.
+      </p>
+
+      <div class="brand-section">
+        <div class="brand-title">Corsica</div>
+        <div class="brand-row">
+          <input type="checkbox" id="corsica_email" name="corsica_email" />
+          <label for="corsica_email">I&rsquo;d like to receive email marketing about Corsica holidays</label>
+        </div>
+      </div>
+
+      <div class="brand-section">
+        <div class="brand-title">Sardinian Places</div>
+        <div class="brand-row">
+          <input type="checkbox" id="sardinia_email" name="sardinia_email" />
+          <label for="sardinia_email">I&rsquo;d like to receive email marketing about Sardinian Places holidays</label>
+        </div>
+      </div>
+
+      <div class="brand-section">
+        <div class="brand-title">Goa Experience</div>
+        <div class="brand-row">
+          <input type="checkbox" id="goa_email" name="goa_email" />
+          <label for="goa_email">I&rsquo;d like to receive email marketing about Goa Experience holidays</label>
+        </div>
+      </div>
+
+      <div class="brand-section">
+        <div class="brand-title">The Gambia Experience</div>
+        <div class="brand-row">
+          <input type="checkbox" id="gambia_email" name="gambia_email" />
+          <label for="gambia_email">I&rsquo;d like to receive email marketing about The Gambia Experience holidays</label>
+        </div>
+      </div>
+
+      <div class="brand-section">
+        <div class="brand-title">Cape Verde Experience</div>
+        <div class="brand-row">
+          <input type="checkbox" id="cape_verde_email" name="cape_verde_email" />
+          <label for="cape_verde_email">I&rsquo;d like to receive email marketing about Cape Verde Experience holidays</label>
+        </div>
+      </div>
+
+      <p class="legal">
+        By saving your preferences you consent to us contacting you by email about the
+        brands you have selected. You can update your preferences at any time using the
+        link in our emails. For full details please see our Privacy Policy.
+      </p>
+
+      <button class="btn-submit" id="btn-save" type="button">Save my preferences</button>
+    </div>
+  </div>
+
+</div><!-- /.card -->
+
+<script>
+  // ── Configuration — update before deploying ──────────────────
+  const ZOHO_DOMAIN   = 'https://www.zohoapis.eu'; // .com for US, .com.au for AU
+  const API_KEY       = 'YOUR_API_KEY_HERE';        // CRM standalone function API key
+  const GET_FUNCTION  = 'get_consent_data';
+  const POST_FUNCTION = 'submit_consent';
+  // ─────────────────────────────────────────────────────────────
+
+  // Checkbox IDs — must match the `id` attributes on the inputs above
+  const BRAND_KEYS = [
+    'corsica_email',
+    'sardinia_email',
+    'goa_email',
+    'gambia_email',
+    'cape_verde_email'
+  ];
+
+  function show(id) {
+    ['state-loading','state-form','state-success','state-error']
+      .forEach(s => document.getElementById(s).style.display = (s === id) ? '' : 'none');
+  }
+
+  function apiUrl(fnName, params) {
+    const base = `${ZOHO_DOMAIN}/crm/v2/functions/${fnName}/actions/execute`;
+    const qs   = new URLSearchParams({ auth_type: 'apikey', zapikey: API_KEY, ...params });
+    return `${base}?${qs}`;
+  }
+
+  async function loadContact(contactId) {
+    show('state-loading');
+    try {
+      const res  = await fetch(apiUrl(GET_FUNCTION, { contact_id: contactId }));
+      const json = await res.json();
+      const data = typeof json.details?.output === 'string'
+        ? JSON.parse(json.details.output)
+        : json.details?.output;
+
+      if (!data || data.status !== 'success') throw new Error('Bad response');
+
+      // Greeting
+      document.getElementById('contact-greeting').textContent =
+        `Hello ${data.first_name} ${data.last_name} — please update your preferences below`;
+
+      // Pre-populate checkboxes from CRM values
+      BRAND_KEYS.forEach(key => {
+        const el = document.getElementById(key);
+        if (el) el.checked = (data[key] === true || data[key] === 'true');
+      });
+
+      document.getElementById('btn-save').dataset.contactId = contactId;
+      show('state-form');
+    } catch(e) {
+      console.error(e);
+      show('state-error');
+    }
+  }
+
+  async function submitConsent(btn) {
+    btn.disabled    = true;
+    btn.textContent = 'Saving…';
+
+    const contactId = btn.dataset.contactId;
+    const payload   = { contact_id: contactId };
+
+    BRAND_KEYS.forEach(key => {
+      const el    = document.getElementById(key);
+      payload[key] = el ? String(el.checked) : 'false';
+    });
+
+    try {
+      const res  = await fetch(apiUrl(POST_FUNCTION, {}), {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (json.code === 'success') {
+        show('state-success');
+      } else {
+        throw new Error(JSON.stringify(json));
+      }
+    } catch(e) {
+      console.error(e);
+      btn.disabled    = false;
+      btn.textContent = 'Save my preferences';
+      alert('There was a problem saving your preferences. Please try again.');
+    }
+  }
+
+  document.getElementById('btn-save').addEventListener('click', function() {
+    submitConsent(this);
+  });
+
+  const contactId = new URLSearchParams(window.location.search).get('contact_id');
+  if (contactId) {
+    loadContact(contactId);
+  } else {
+    show('state-error');
+  }
+</script>
+
+</body>
+</html>
