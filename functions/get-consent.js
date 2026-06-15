@@ -1,9 +1,9 @@
 const ZAPIKEY  = '1003.8f0da447a3c4a002abce3cdb11b48c8c.e62123d416ecdadfb7e4fbd009aa6805';
-const ZOHO_URL = 'https://www.zohoapis.eu/crm/v7/functions/get_consent_data/actions/execute';
+const ZOHO_URL = 'https://www.zohoapis.eu/crm/v7/functions/submit_consent/actions/execute';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
@@ -13,18 +13,21 @@ export async function onRequest(context) {
   if (request.method === 'OPTIONS') {
     return new Response('', { status: 200, headers: CORS });
   }
-
-  const contactId = new URL(request.url).searchParams.get('contact_id') || '';
-  if (!contactId) {
-    return new Response(
-      JSON.stringify({ status: 'error', message: 'contact_id is required' }),
-      { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
-    );
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405, headers: CORS });
   }
 
   try {
-    const url  = `${ZOHO_URL}?auth_type=apikey&zapikey=${ZAPIKEY}&contact_id=${encodeURIComponent(contactId)}`;
-    const res  = await fetch(url);
+    const body   = await request.json();
+    const params = new URLSearchParams({ auth_type: 'apikey', zapikey: ZAPIKEY });
+    Object.keys(body).forEach(k => params.set(k, body[k]));
+    const url = `${ZOHO_URL}?${params.toString()}`;
+
+    const res  = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
     const json = await res.json();
 
     let data;
