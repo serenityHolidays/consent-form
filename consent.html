@@ -260,7 +260,8 @@
     });
 
     // Populate holiday preference chips
-    var selected = (data.holiday_preferences || '').split(';').map(function(s){ return s.trim(); });
+    var prefsRaw = data.holiday_preferences;
+    var selected = Array.isArray(prefsRaw) ? prefsRaw : (prefsRaw || '').split(';').map(function(s){ return s.trim(); }).filter(Boolean);
     var chipsContainer = document.getElementById('prefs-chips');
     chipsContainer.innerHTML = '';
     HOLIDAY_PREFS.forEach(function(pref) {
