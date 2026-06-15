@@ -45,8 +45,11 @@ exports.handler = async (event) => {
   }
 
   try {
-    const body = JSON.parse(event.body || '{}');
-    const url  = `${ZOHO_URL}?auth_type=apikey&zapikey=${ZAPIKEY}`;
+    const body   = JSON.parse(event.body || '{}');
+    // Zoho maps function parameters from the query string, not the JSON body
+    const params = new URLSearchParams({ auth_type: 'apikey', zapikey: ZAPIKEY });
+    Object.keys(body).forEach(k => params.set(k, body[k]));
+    const url = `${ZOHO_URL}?${params.toString()}`;
     const json = await zohoPost(url, body);
     let data;
     if (json.details && json.details.output) {
