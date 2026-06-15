@@ -41,10 +41,7 @@
       line-height: 1.5;
     }
 
-    .contact-name {
-      font-weight: bold;
-      color: #333;
-    }
+    .contact-name { font-weight: bold; color: #333; }
 
     .brand-section {
       margin-bottom: 20px;
@@ -54,18 +51,17 @@
       background: #fdfaf5;
     }
 
-    .brand-name {
-      font-size: 1rem;
-      font-weight: bold;
-      margin-bottom: 12px;
-      color: #444;
+    .brand-logo {
+      display: block;
+      height: 72px;
+      width: auto;
+      max-width: 180px;
+      object-fit: contain;
+      border-radius: 6px;
+      margin-bottom: 14px;
     }
 
-    .consent-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .consent-row { display: flex; align-items: center; gap: 10px; }
 
     .consent-row input[type="checkbox"] {
       width: 18px;
@@ -122,6 +118,57 @@
       display: block;
     }
 
+    .prefs-section {
+      margin-top: 28px;
+      padding: 20px;
+      border: 1px solid #e8e0d4;
+      border-radius: 3px;
+      background: #fdfaf5;
+    }
+
+    .prefs-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #444;
+      margin-bottom: 4px;
+    }
+
+    .prefs-subtitle {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 14px;
+    }
+
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip { cursor: pointer; }
+
+    .chip input[type="checkbox"] {
+      display: none;
+    }
+
+    .chip span {
+      display: inline-block;
+      padding: 6px 14px;
+      border: 1px solid #c8b99a;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #555;
+      background: #fff;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+
+    .chip input:checked + span {
+      background: #6b5c3e;
+      color: #fff;
+      border-color: #6b5c3e;
+    }
+
     .loading {
       text-align: center;
       padding: 40px;
@@ -134,32 +181,23 @@
 <div class="card">
 
   <script>
-    // ── Config ───────────────────────────────────────────────────
-    // Set SANDBOX to false when you go to production.
-    // Sandbox:    sandbox.zohoapis.eu
-    // Production: www.zohoapis.eu
-    const CONFIG = {
-      SANDBOX:   false,
-      ZAPIKEY:   '1003.8f0da447a3c4a002abce3cdb11b48c8c.e62123d416ecdadfb7e4fbd009aa6805',
-      get DOMAIN() {
-        return this.SANDBOX
-          ? 'https://sandbox.zohoapis.eu'
-          : 'https://www.zohoapis.eu';
-      },
-      get GET_URL() {
-        return `${this.DOMAIN}/crm/v7/functions/get_consent_data/actions/execute?auth_type=apikey&zapikey=${this.ZAPIKEY}`;
-      },
-      get POST_URL() {
-        return `${this.DOMAIN}/crm/v7/functions/submit_consent/actions/execute?auth_type=apikey&zapikey=${this.ZAPIKEY}`;
-      }
-    };
+    // Calls Netlify proxy functions — no CORS issues
+    const GET_URL  = '/get-consent';
+    const POST_URL = '/submit-consent';
+
+    const HOLIDAY_PREFS = [
+      'All-inclusive','Luxury','Birdwatching','Couples','Family',
+      'Island hopping','Tours','Walking','Senegal','Villa',
+      'Apartment','Hotel','Flight only','Gatwick','Bristol',
+      'East Midlands','Birmingham','Heathrow'
+    ];
 
     const BRANDS = [
-      { id: 'corsica',    label: 'Corsica',    param: 'corsica_email' },
-      { id: 'goa',        label: 'Goa',        param: 'goa_email' },
-      { id: 'cape_verde', label: 'Cape Verde', param: 'cape_verde_email' },
-      { id: 'gambia',     label: 'Gambia',     param: 'gambia_email' },
-      { id: 'sardinia',   label: 'Sardinia',   param: 'sardinia_email' }
+      { id: 'corsica',    label: 'Corsica',          logo: '/logo-corsica.png',    param: 'corsica_email' },
+      { id: 'goa',        label: 'Goa',              logo: '/logo-goa.png',        param: 'goa_email' },
+      { id: 'cape_verde', label: 'Cape Verde',        logo: '/logo-cape-verde.png', param: 'cape_verde_email' },
+      { id: 'gambia',     label: 'The Gambia',        logo: '/logo-gambia.png',     param: 'gambia_email' },
+      { id: 'sardinia',   label: 'Sardinian Places',  logo: '/logo-sardinia.png',   param: 'sardinia_email' }
     ];
   </script>
 
@@ -171,8 +209,13 @@
       Hello <span id="contact-name" class="contact-name"></span>. Please tick the
       brands you would like to hear from by email, then click Save.
     </p>
-
     <div id="brands-container"></div>
+
+    <div class="prefs-section">
+      <div class="prefs-title">Holiday Preferences</div>
+      <div class="prefs-subtitle">Select all that apply</div>
+      <div class="chips-container" id="prefs-chips"></div>
+    </div>
 
     <button class="btn" id="save-btn" onclick="savePreferences()">Save Preferences</button>
     <div class="message" id="message"></div>
@@ -198,17 +241,17 @@
 
   function showForm(data) {
     document.getElementById('loading').style.display = 'none';
-    const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || 'there';
+    var name = [data.first_name, data.last_name].filter(Boolean).join(' ') || 'there';
     document.getElementById('contact-name').textContent = name;
 
-    const container = document.getElementById('brands-container');
+    var container = document.getElementById('brands-container');
     container.innerHTML = '';
     BRANDS.forEach(function(brand) {
       var isChecked = data[brand.param] === true || data[brand.param] === 'true';
       var section = document.createElement('div');
       section.className = 'brand-section';
       section.innerHTML =
-        '<div class="brand-name">' + brand.label + '</div>' +
+        '<img class="brand-logo" src="' + brand.logo + '" alt="' + brand.label + '" />' +
         '<div class="consent-row">' +
           '<input type="checkbox" id="cb_' + brand.id + '" ' + (isChecked ? 'checked' : '') + ' />' +
           '<label for="cb_' + brand.id + '">I\'d like to receive email marketing from ' + brand.label + '</label>' +
@@ -216,73 +259,8 @@
       container.appendChild(section);
     });
 
-    document.getElementById('form-content').style.display = 'block';
-  }
-
-  function setMessage(type, text) {
-    var el = document.getElementById('message');
-    el.className = 'message ' + type;
-    el.textContent = text;
-  }
-
-  async function loadPreferences() {
-    var contactId = getContactId();
-    if (!contactId) {
-      showError('No contact ID found in the URL. Please use the link provided in your email.');
-      return;
-    }
-    try {
-      var res  = await fetch(CONFIG.GET_URL + '&contact_id=' + encodeURIComponent(contactId));
-      var json = await res.json();
-      var data = (json.details) ? json.details : json;
-      if (data.status === 'error') {
-        showError(data.message || 'Could not load your preferences. Please try again later.');
-      } else {
-        showForm(data);
-      }
-    } catch (err) {
-      showError('Network error — please check your connection and try again.');
-      console.error(err);
-    }
-  }
-
-  async function savePreferences() {
-    var contactId = getContactId();
-    var btn = document.getElementById('save-btn');
-    btn.disabled = true;
-    btn.textContent = 'Saving…';
-
-    var body = { contact_id: contactId };
-    BRANDS.forEach(function(brand) {
-      var cb = document.getElementById('cb_' + brand.id);
-      body[brand.param] = cb ? String(cb.checked) : 'false';
-    });
-
-    try {
-      var res  = await fetch(CONFIG.POST_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body)
-      });
-      var json = await res.json();
-      var data = (json.details) ? json.details : json;
-
-      if (data.status === 'error') {
-        setMessage('error', data.message || 'Something went wrong. Please try again.');
-      } else {
-        setMessage('success', 'Your preferences have been saved. Thank you!');
-      }
-    } catch (err) {
-      setMessage('error', 'Network error — please check your connection and try again.');
-      console.error(err);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Save Preferences';
-    }
-  }
-
-  loadPreferences();
-</script>
-
-</body>
-</html>
+    // Populate holiday preference chips
+    var selected = (data.holiday_preferences || '').split(';').map(function(s){ return s.trim(); });
+    var chipsContainer = document.getElementById('prefs-chips');
+    chipsContainer.innerHTML = '';
+    HOLIDAY_PREF
