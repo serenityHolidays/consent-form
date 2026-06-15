@@ -181,7 +181,7 @@
 <div class="card">
 
   <script>
-    // Calls Netlify proxy functions — no CORS issues
+    // Calls Cloudflare proxy functions — no CORS issues
     const GET_URL  = '/get-consent';
     const POST_URL = '/submit-consent';
 
@@ -263,4 +263,92 @@
     var selected = (data.holiday_preferences || '').split(';').map(function(s){ return s.trim(); });
     var chipsContainer = document.getElementById('prefs-chips');
     chipsContainer.innerHTML = '';
-    HOLIDAY_PREF
+    HOLIDAY_PREFS.forEach(function(pref) {
+      var label = document.createElement('label');
+      label.className = 'chip';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = pref;
+      cb.name = 'holiday_pref';
+      if (selected.indexOf(pref) !== -1) cb.checked = true;
+      var span = document.createElement('span');
+      span.textContent = pref;
+      label.appendChild(cb);
+      label.appendChild(span);
+      chipsContainer.appendChild(label);
+    });
+
+    document.getElementById('form-content').style.display = 'block';
+  }
+
+  function setMessage(type, text) {
+    var el = document.getElementById('message');
+    el.className = 'message ' + type;
+    el.textContent = text;
+  }
+
+  async function loadPreferences() {
+    var contactId = getContactId();
+    if (!contactId) {
+      showError('No contact ID found in the URL. Please use the link provided in your email.');
+      return;
+    }
+    try {
+      var res  = await fetch(GET_URL + '?contact_id=' + encodeURIComponent(contactId));
+      var data = await res.json();
+      if (data.status === 'error') {
+        showError(data.message || 'Could not load your preferences. Please try again later.');
+      } else {
+        showForm(data);
+      }
+    } catch (err) {
+      showError('Network error — please check your connection and try again.');
+      console.error(err);
+    }
+  }
+
+  async function savePreferences() {
+    var contactId = getContactId();
+    var btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    var body = { contact_id: contactId };
+    BRANDS.forEach(function(brand) {
+      var cb = document.getElementById('cb_' + brand.id);
+      body[brand.param] = cb ? String(cb.checked) : 'false';
+    });
+
+    // Collect selected holiday preferences as semicolon-separated string
+    var selectedPrefs = [];
+    document.querySelectorAll('#prefs-chips input:checked').forEach(function(cb) {
+      selectedPrefs.push(cb.value);
+    });
+    body.holiday_preferences = selectedPrefs.join(';');
+
+    try {
+      var res  = await fetch(POST_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      var data = await res.json();
+      if (data.status === 'error') {
+        setMessage('error', data.message || 'Something went wrong. Please try again.');
+      } else {
+        setMessage('success', 'Your preferences have been saved. Thank you!');
+      }
+    } catch (err) {
+      setMessage('error', 'Network error — please check your connection and try again.');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Preferences';
+    }
+  }
+
+  loadPreferences();
+</script>
+
+</body>
+</html>
