@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Consent URL Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,34 +20,18 @@
       background: #fff;
       border: 1px solid #e0d8cc;
       border-radius: 4px;
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 40px;
     }
 
-    h1 {
-      font-size: 1.5rem;
-      font-weight: normal;
-      margin-bottom: 8px;
-      color: #222;
-    }
+    h1 { font-size: 1.5rem; font-weight: normal; margin-bottom: 8px; color: #222; }
 
-    .subtitle {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 28px;
-      line-height: 1.5;
-    }
+    .subtitle { font-size: 0.9rem; color: #666; margin-bottom: 28px; line-height: 1.5; }
 
-    label {
-      display: block;
-      font-size: 0.9rem;
-      font-weight: bold;
-      color: #444;
-      margin-bottom: 6px;
-    }
+    label { display: block; font-size: 0.9rem; font-weight: bold; color: #444; margin-bottom: 6px; }
 
-    input[type="password"] {
+    input[type="password"], input[type="text"] {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid #d0c8bc;
@@ -58,11 +43,52 @@
       margin-bottom: 20px;
     }
 
-    input[type="password"]:focus { outline: none; border-color: #6b5c3e; }
+    input[type="password"]:focus, input[type="text"]:focus { outline: none; border-color: #6b5c3e; }
+
+    .divider { border: none; border-top: 1px solid #e8e0d4; margin: 24px 0; }
+
+    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #e0d8cc; }
+
+    .tab {
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      color: #888;
+    }
+
+    .tab.active { color: #6b5c3e; border-bottom-color: #6b5c3e; font-weight: bold; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .drop-zone {
+      border: 2px dashed #c8b99a;
+      border-radius: 4px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      background: #fdfaf5;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover { border-color: #6b5c3e; background: #f5ede0; }
+
+    .drop-zone input[type="file"] { display: none; }
+
+    .drop-zone-text { font-size: 0.95rem; color: #888; }
+    .drop-zone-text strong { color: #6b5c3e; }
+
+    .file-name { margin-top: 8px; font-size: 0.85rem; color: #555; font-family: monospace; }
 
     textarea {
       width: 100%;
-      height: 160px;
+      height: 140px;
       padding: 12px;
       border: 1px solid #d0c8bc;
       border-radius: 3px;
@@ -71,6 +97,7 @@
       resize: vertical;
       background: #fdfaf5;
       color: #333;
+      margin-bottom: 16px;
     }
 
     textarea:focus { outline: none; border-color: #6b5c3e; }
@@ -78,7 +105,6 @@
     .btn {
       display: inline-block;
       padding: 12px 24px;
-      margin-top: 16px;
       background: #6b5c3e;
       color: #fff;
       border: none;
@@ -101,11 +127,23 @@
 
     .btn-secondary:hover:not(:disabled) { background: #fdfaf5; }
 
-    .progress {
-      margin-top: 20px;
-      font-size: 0.85rem;
-      color: #888;
-      display: none;
+    .progress { margin-top: 20px; font-size: 0.85rem; color: #888; display: none; }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: #e8e0d4;
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #6b5c3e;
+      border-radius: 3px;
+      transition: width 0.2s;
+      width: 0%;
     }
 
     .alert {
@@ -116,38 +154,23 @@
       display: none;
     }
 
-    .alert.error {
-      background: #fdecea;
-      border: 1px solid #f5c6cb;
-      color: #c62828;
-      display: block;
-    }
+    .alert.error { background: #fdecea; border: 1px solid #f5c6cb; color: #c62828; display: block; }
 
-    .results-section {
-      margin-top: 28px;
-      display: none;
-    }
+    .results-section { margin-top: 28px; display: none; }
 
     .results-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
-    .results-title {
-      font-size: 1rem;
-      font-weight: bold;
-      color: #444;
-    }
+    .results-title { font-size: 1rem; font-weight: bold; color: #444; }
+    .results-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .results-actions { display: flex; gap: 8px; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 
     th {
       background: #f5ede0;
@@ -158,24 +181,13 @@
       border-bottom: 2px solid #e0d8cc;
     }
 
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #f0e8dc;
-      vertical-align: middle;
-      word-break: break-all;
-    }
-
+    td { padding: 9px 12px; border-bottom: 1px solid #f0e8dc; vertical-align: middle; word-break: break-all; }
     tr:last-child td { border-bottom: none; }
     tr:nth-child(even) td { background: #fdfaf5; }
 
-    .status-ok  { color: #2e7d32; font-weight: bold; }
-    .status-err { color: #c62828; font-weight: bold; }
-
-    .url-cell {
-      font-family: monospace;
-      font-size: 0.78rem;
-      color: #555;
-    }
+    .status-ok  { color: #2e7d32; font-weight: bold; white-space: nowrap; }
+    .status-err { color: #c62828; font-weight: bold; white-space: nowrap; }
+    .url-cell   { font-family: monospace; font-size: 0.75rem; color: #555; }
 
     .copy-cell button {
       padding: 4px 10px;
@@ -189,47 +201,67 @@
     }
 
     .copy-cell button:hover { background: #fdfaf5; }
-
-    .divider {
-      border: none;
-      border-top: 1px solid #e8e0d4;
-      margin: 28px 0;
-    }
   </style>
 </head>
 <body>
 <div class="card">
   <h1>Consent URL Generator</h1>
-  <p class="subtitle">
-    Enter your admin key, then paste Zoho CRM Contact IDs (one per line) to generate
-    a secure, tokenised consent form URL for each contact.
-  </p>
+  <p class="subtitle">Enter your admin key, then upload a CSV or paste Contact IDs to generate secure, tokenised consent form URLs.</p>
 
   <label for="admin-key">Admin Key</label>
   <input type="password" id="admin-key" placeholder="Enter admin key…" autocomplete="off" />
 
   <hr class="divider" />
 
-  <label for="ids-input">Contact IDs</label>
-  <textarea id="ids-input" placeholder="891627000002745001&#10;891627000002745002&#10;891627000002745003"></textarea>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('csv')">Upload CSV</button>
+    <button class="tab" onclick="switchTab('paste')">Paste IDs</button>
+  </div>
 
-  <div>
-    <button class="btn" id="generate-btn" onclick="generate()">Generate URLs</button>
-    <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+  <!-- CSV Upload Tab -->
+  <div class="tab-panel active" id="tab-csv">
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+         ondragover="event.preventDefault();this.classList.add('dragover')"
+         ondragleave="this.classList.remove('dragover')"
+         ondrop="handleDrop(event)">
+      <input type="file" id="file-input" accept=".csv" onchange="handleFile(this.files[0])" />
+      <div class="drop-zone-text">
+        <strong>Click to choose</strong> or drag and drop your CSV file here
+      </div>
+      <div class="file-name" id="file-name"></div>
+    </div>
+    <p style="font-size:0.85rem;color:#888;margin-bottom:16px;">
+      The CSV must have a <strong>Record Id</strong> column (values like <code>zcrm_891627000002745001</code>)
+      and a <strong>Preference Link</strong> column. The Preference Link column will be populated with the generated URLs.
+    </p>
+    <button class="btn" id="generate-btn-csv" onclick="generateFromCSV()" disabled>Generate &amp; Download CSV</button>
+    <button class="btn btn-secondary" onclick="clearCSV()">Clear</button>
+  </div>
+
+  <!-- Paste Tab -->
+  <div class="tab-panel" id="tab-paste">
+    <label for="ids-input">Contact IDs (one per line — with or without <code>zcrm_</code> prefix)</label>
+    <textarea id="ids-input" placeholder="zcrm_891627000002745001&#10;891627000002745002&#10;zcrm_891627000002745003"></textarea>
+    <button class="btn" id="generate-btn-paste" onclick="generateFromPaste()">Generate URLs</button>
+    <button class="btn btn-secondary" onclick="clearPaste()">Clear</button>
   </div>
 
   <div class="alert" id="alert"></div>
-  <div class="progress" id="progress"></div>
+
+  <div class="progress" id="progress">
+    <span id="progress-text"></span>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+  </div>
 
   <div class="results-section" id="results-section">
     <div class="results-header">
       <div class="results-title" id="results-title"></div>
       <div class="results-actions">
-        <button class="btn btn-secondary" style="margin:0;padding:8px 16px;font-size:0.85rem;" onclick="downloadCSV()">Download CSV</button>
+        <button class="btn btn-secondary" style="margin:0;padding:8px 16px;font-size:0.85rem;" onclick="downloadResultsCSV()">Download CSV</button>
         <button class="btn" style="margin:0;padding:8px 16px;font-size:0.85rem;" onclick="copyCSV()">Copy as CSV</button>
       </div>
     </div>
-    <table id="results-table">
+    <table>
       <thead>
         <tr>
           <th>Contact ID</th>
@@ -245,70 +277,167 @@
 
 <script>
   const GENERATE_URL = '/generate-token';
+  var results    = [];
+  var csvData    = null; // parsed CSV rows
+  var csvHeaders = [];
+  var csvFile    = null;
 
-  var results = [];
-
-  function showAlert(msg) {
-    var el = document.getElementById('alert');
-    el.className = 'alert error';
-    el.textContent = msg;
-  }
-
-  function hideAlert() {
-    var el = document.getElementById('alert');
-    el.className = 'alert';
-  }
-
-  async function generate() {
+  // ── Tabs ─────────────────────────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(function(t, i) {
+      t.classList.toggle('active', (i === 0 ? 'csv' : 'paste') === name);
+    });
+    document.getElementById('tab-csv').classList.toggle('active', name === 'csv');
+    document.getElementById('tab-paste').classList.toggle('active', name === 'paste');
     hideAlert();
+  }
 
+  // ── File handling ─────────────────────────────────────────────────────────
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('dragover');
+    var file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    csvFile = file;
+    document.getElementById('file-name').textContent = file.name;
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(res) {
+        csvHeaders = res.meta.fields;
+        csvData    = res.data;
+        var btn = document.getElementById('generate-btn-csv');
+        if (!csvHeaders.includes('Record Id')) {
+          showAlert('CSV must have a "Record Id" column.');
+          btn.disabled = true;
+        } else if (!csvHeaders.includes('Preference Link')) {
+          showAlert('CSV must have a "Preference Link" column.');
+          btn.disabled = true;
+        } else {
+          hideAlert();
+          btn.disabled = false;
+        }
+      },
+      error: function() { showAlert('Could not parse CSV file. Please check the format.'); }
+    });
+  }
+
+  // ── Strip zcrm_ prefix ────────────────────────────────────────────────────
+  function cleanId(raw) {
+    return String(raw).replace(/^zcrm_/i, '').trim();
+  }
+
+  // ── Core token fetch ──────────────────────────────────────────────────────
+  async function fetchToken(contactId, adminKey) {
+    var res  = await fetch(GENERATE_URL + '?contact_id=' + encodeURIComponent(contactId) + '&admin_key=' + encodeURIComponent(adminKey));
+    var data = await res.json();
+    if (data.status === 'success') return { ok: true, url: data.url };
+    return { ok: false, url: data.message || 'Error' };
+  }
+
+  // ── Progress helpers ──────────────────────────────────────────────────────
+  function showProgress(current, total) {
+    var el = document.getElementById('progress');
+    el.style.display = 'block';
+    document.getElementById('progress-text').textContent = 'Processing ' + current + ' of ' + total + '…';
+    document.getElementById('progress-bar').style.width = Math.round((current / total) * 100) + '%';
+  }
+
+  function hideProgress() { document.getElementById('progress').style.display = 'none'; }
+
+  // ── Generate from CSV ─────────────────────────────────────────────────────
+  async function generateFromCSV() {
+    var adminKey = document.getElementById('admin-key').value.trim();
+    if (!adminKey) { showAlert('Please enter the admin key.'); return; }
+    if (!csvData || !csvData.length) { showAlert('Please upload a CSV file first.'); return; }
+
+    var btn = document.getElementById('generate-btn-csv');
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    hideAlert();
+    results = [];
+    document.getElementById('results-body').innerHTML = '';
+    document.getElementById('results-section').style.display = 'none';
+
+    var updatedRows = [];
+    var okCount = 0;
+
+    for (var i = 0; i < csvData.length; i++) {
+      showProgress(i + 1, csvData.length);
+      var row       = Object.assign({}, csvData[i]);
+      var rawId     = row['Record Id'] || '';
+      var contactId = cleanId(rawId);
+      var result;
+
+      if (!contactId) {
+        result = { ok: false, url: 'Missing ID' };
+      } else {
+        try { result = await fetchToken(contactId, adminKey); }
+        catch(e) { result = { ok: false, url: 'Network error' }; }
+      }
+
+      if (result.ok) {
+        row['Preference Link'] = result.url;
+        okCount++;
+      }
+      updatedRows.push(row);
+      results.push({ id: contactId || rawId, url: result.url, ok: result.ok });
+      addRow(contactId || rawId, result.url, result.ok);
+    }
+
+    hideProgress();
+    document.getElementById('results-title').textContent = okCount + ' of ' + csvData.length + ' URLs generated';
+    document.getElementById('results-section').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Generate & Download CSV';
+
+    // Auto-download updated CSV
+    var csv = Papa.unparse(updatedRows, { columns: csvHeaders });
+    downloadBlob(csv, (csvFile ? csvFile.name.replace('.csv','') : 'contacts') + '-with-links.csv');
+  }
+
+  // ── Generate from paste ───────────────────────────────────────────────────
+  async function generateFromPaste() {
     var adminKey = document.getElementById('admin-key').value.trim();
     if (!adminKey) { showAlert('Please enter the admin key.'); return; }
 
     var raw = document.getElementById('ids-input').value.trim();
     if (!raw) { showAlert('Please enter at least one Contact ID.'); return; }
 
-    var ids = raw.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    var ids = raw.split('\n').map(function(s){ return cleanId(s); }).filter(Boolean);
     if (!ids.length) return;
 
-    var btn = document.getElementById('generate-btn');
+    var btn = document.getElementById('generate-btn-paste');
     btn.disabled = true;
     btn.textContent = 'Generating…';
-
-    var progress = document.getElementById('progress');
-    progress.style.display = 'block';
-
+    hideAlert();
     results = [];
     document.getElementById('results-body').innerHTML = '';
     document.getElementById('results-section').style.display = 'none';
 
     for (var i = 0; i < ids.length; i++) {
+      showProgress(i + 1, ids.length);
       var id = ids[i];
-      progress.textContent = 'Processing ' + (i + 1) + ' of ' + ids.length + '…';
-      try {
-        var res  = await fetch(GENERATE_URL + '?contact_id=' + encodeURIComponent(id) + '&admin_key=' + encodeURIComponent(adminKey));
-        var data = await res.json();
-        if (data.status === 'success') {
-          results.push({ id: id, url: data.url, ok: true });
-          addRow(id, data.url, true);
-        } else {
-          results.push({ id: id, url: data.message || 'Error', ok: false });
-          addRow(id, data.message || 'Error', false);
-        }
-      } catch (err) {
-        results.push({ id: id, url: 'Network error', ok: false });
-        addRow(id, 'Network error', false);
-      }
+      var result;
+      try { result = await fetchToken(id, adminKey); }
+      catch(e) { result = { ok: false, url: 'Network error' }; }
+      results.push({ id: id, url: result.url, ok: result.ok });
+      addRow(id, result.url, result.ok);
     }
 
     var ok = results.filter(function(r){ return r.ok; }).length;
     document.getElementById('results-title').textContent = ok + ' of ' + ids.length + ' URLs generated';
     document.getElementById('results-section').style.display = 'block';
-    progress.style.display = 'none';
+    hideProgress();
     btn.disabled = false;
     btn.textContent = 'Generate URLs';
   }
 
+  // ── Table row ─────────────────────────────────────────────────────────────
   function addRow(id, url, ok) {
     var tbody = document.getElementById('results-body');
     var tr = document.createElement('tr');
@@ -320,43 +449,62 @@
     tbody.appendChild(tr);
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function showAlert(msg) {
+    var el = document.getElementById('alert');
+    el.className = 'alert error';
+    el.textContent = msg;
+  }
+
+  function hideAlert() {
+    document.getElementById('alert').className = 'alert';
+  }
+
   function copyUrl(url) {
-    navigator.clipboard.writeText(url).catch(function() { prompt('Copy this URL:', url); });
+    navigator.clipboard.writeText(url).catch(function() { prompt('Copy URL:', url); });
   }
 
   function escHtml(str) {
-    return String(str)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function getCSV() {
+  function downloadBlob(content, filename) {
+    var blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+  }
+
+  function downloadResultsCSV() {
     var lines = ['Contact ID,Consent Form URL,Status'];
     results.forEach(function(r) {
       lines.push('"' + r.id + '","' + r.url + '","' + (r.ok ? 'OK' : 'Error') + '"');
     });
-    return lines.join('\n');
-  }
-
-  function downloadCSV() {
-    var blob = new Blob([getCSV()], { type: 'text/csv' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'consent-urls.csv';
-    a.click();
+    downloadBlob(lines.join('\n'), 'consent-urls.csv');
   }
 
   function copyCSV() {
-    navigator.clipboard.writeText(getCSV()).catch(function() { prompt('Copy CSV:', getCSV()); });
+    var lines = ['Contact ID,Consent Form URL,Status'];
+    results.forEach(function(r) {
+      lines.push('"' + r.id + '","' + r.url + '","' + (r.ok ? 'OK' : 'Error') + '"');
+    });
+    navigator.clipboard.writeText(lines.join('\n')).catch(function() { prompt('Copy CSV:', lines.join('\n')); });
   }
 
-  function clearAll() {
-    document.getElementById('ids-input').value = '';
-    document.getElementById('admin-key').value = '';
+  function clearCSV() {
+    csvData = null; csvHeaders = []; csvFile = null;
+    document.getElementById('file-name').textContent = '';
+    document.getElementById('file-input').value = '';
+    document.getElementById('generate-btn-csv').disabled = true;
     document.getElementById('results-section').style.display = 'none';
-    document.getElementById('progress').style.display = 'none';
-    hideAlert();
-    results = [];
+    hideProgress(); hideAlert(); results = [];
+  }
+
+  function clearPaste() {
+    document.getElementById('ids-input').value = '';
+    document.getElementById('results-section').style.display = 'none';
+    hideProgress(); hideAlert(); results = [];
   }
 </script>
 </body>
