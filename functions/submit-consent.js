@@ -7,8 +7,20 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+async function generateHmac(message, secret) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, env } = context;
 
   if (request.method === 'OPTIONS') {
     return new Response('', { status: 200, headers: CORS });
@@ -18,15 +30,37 @@ export async function onRequest(context) {
   }
 
   try {
-    const body   = await request.json();
+    const body      = await request.json();
+    const contactId = body.contact_id || '';
+    const token     = body.token || '';
+
+    if (!contactId) {
+      return new Response(
+        JSON.stringify({ status: 'error', message: 'contact_id is required' }),
+        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify HMAC token
+    const expectedToken = await generateHmac(contactId, env.HMAC_SECRET);
+    if (token !== expectedToken) {
+      return new Response(
+        JSON.stringify({ status: 'error', message: 'Invalid or missing token' }),
+        { status: 403, headers: { ...CORS, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Remove token from body before forwarding to Zoho
+    const { token: _t, ...zohoBody } = body;
+
     const params = new URLSearchParams({ auth_type: 'apikey', zapikey: ZAPIKEY });
-    Object.keys(body).forEach(k => params.set(k, body[k]));
+    Object.keys(zohoBody).forEach(k => params.set(k, zohoBody[k]));
     const url = `${ZOHO_URL}?${params.toString()}`;
 
     const res  = await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(body),
+      body:    JSON.stringify(zohoBody),
     });
     const json = await res.json();
 
