@@ -7,18 +7,42 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+async function generateHmac(message, secret) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, env } = context;
 
   if (request.method === 'OPTIONS') {
     return new Response('', { status: 200, headers: CORS });
   }
 
-  const contactId = new URL(request.url).searchParams.get('contact_id') || '';
+  const params    = new URL(request.url).searchParams;
+  const contactId = params.get('contact_id') || '';
+  const token     = params.get('token') || '';
+
   if (!contactId) {
     return new Response(
       JSON.stringify({ status: 'error', message: 'contact_id is required' }),
       { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Verify HMAC token
+  const expectedToken = await generateHmac(contactId, env.HMAC_SECRET);
+  if (token !== expectedToken) {
+    return new Response(
+      JSON.stringify({ status: 'error', message: 'Invalid or missing token' }),
+      { status: 403, headers: { ...CORS, 'Content-Type': 'application/json' } }
     );
   }
 
