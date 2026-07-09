@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consent URL Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: #fdf8f0;
+      color: #333;
+      min-height: 100vh;
+      padding: 40px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0d8cc;
+      border-radius: 4px;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: normal;
+      margin-bottom: 8px;
+      color: #222;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 160px;
+      padding: 12px;
+      border: 1px solid #d0c8bc;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      resize: vertical;
+      background: #fdfaf5;
+      color: #333;
+    }
+
+    textarea:focus { outline: none; border-color: #6b5c3e; }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin-top: 16px;
+      background: #6b5c3e;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover:not(:disabled) { background: #554930; }
+    .btn:disabled { background: #aaa; cursor: default; }
+
+    .btn-secondary {
+      background: #fff;
+      color: #6b5c3e;
+      border: 1px solid #6b5c3e;
+      margin-left: 8px;
+    }
+
+    .btn-secondary:hover:not(:disabled) { background: #fdfaf5; }
+
+    .progress {
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: #888;
+      display: none;
+    }
+
+    .results-section {
+      margin-top: 28px;
+      display: none;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .results-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #444;
+    }
+
+    .results-actions { display: flex; gap: 8px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th {
+      background: #f5ede0;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: bold;
+      color: #555;
+      border-bottom: 2px solid #e0d8cc;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0e8dc;
+      vertical-align: middle;
+      word-break: break-all;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #fdfaf5; }
+
+    .status-ok  { color: #2e7d32; font-weight: bold; }
+    .status-err { color: #c62828; font-weight: bold; }
+
+    .url-cell {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #555;
+    }
+
+    .copy-cell button {
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      background: #fff;
+      border: 1px solid #c8b99a;
+      border-radius: 3px;
+      cursor: pointer;
+      color: #6b5c3e;
+      white-space: nowrap;
+    }
+
+    .copy-cell button:hover { background: #fdfaf5; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Consent URL Generator</h1>
+  <p class="subtitle">
+    Paste Zoho CRM Contact IDs below (one per line). Click Generate to produce
+    a secure, tokenised consent form URL for each contact.
+  </p>
+
+  <label for="ids-input">Contact IDs</label>
+  <textarea id="ids-input" placeholder="891627000002745001&#10;891627000002745002&#10;891627000002745003"></textarea>
+
+  <div>
+    <button class="btn" id="generate-btn" onclick="generate()">Generate URLs</button>
+    <button class="btn btn-secondary" id="clear-btn" onclick="clearAll()">Clear</button>
+  </div>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="results-section" id="results-section">
+    <div class="results-header">
+      <div class="results-title" id="results-title"></div>
+      <div class="results-actions">
+        <button class="btn btn-secondary" style="margin:0;padding:8px 16px;font-size:0.85rem;" onclick="downloadCSV()">Download CSV</button>
+        <button class="btn" style="margin:0;padding:8px 16px;font-size:0.85rem;" onclick="copyCSV()">Copy as CSV</button>
+      </div>
+    </div>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Contact ID</th>
+          <th>Consent Form URL</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const GENERATE_URL = '/generate-token';
+  const ADMIN_KEY    = 'sk-admin-9c4e2f7a1b8d3e6c0f5a9b2d4e7c1f3a8b5d2e9c4f7a0b3d6e8c1f4a7b0d2e5';
+
+  var results = [];
+
+  async function generate() {
+    var raw = document.getElementById('ids-input').value.trim();
+    if (!raw) return;
+
+    var ids = raw.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    if (!ids.length) return;
+
+    var btn = document.getElementById('generate-btn');
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+
+    var progress = document.getElementById('progress');
+    progress.style.display = 'block';
+
+    results = [];
+    document.getElementById('results-body').innerHTML = '';
+    document.getElementById('results-section').style.display = 'none';
+
+    for (var i = 0; i < ids.length; i++) {
+      var id = ids[i];
+      progress.textContent = 'Processing ' + (i + 1) + ' of ' + ids.length + '…';
+      try {
+        var res  = await fetch(GENERATE_URL + '?contact_id=' + encodeURIComponent(id) + '&admin_key=' + encodeURIComponent(ADMIN_KEY));
+        var data = await res.json();
+        if (data.status === 'success') {
+          results.push({ id: id, url: data.url, ok: true });
+          addRow(id, data.url, true);
+        } else {
+          results.push({ id: id, url: data.message || 'Error', ok: false });
+          addRow(id, data.message || 'Error', false);
+        }
+      } catch (err) {
+        results.push({ id: id, url: 'Network error', ok: false });
+        addRow(id, 'Network error', false);
+      }
+    }
+
+    var ok = results.filter(function(r){ return r.ok; }).length;
+    document.getElementById('results-title').textContent =
+      ok + ' of ' + ids.length + ' URLs generated';
+    document.getElementById('results-section').style.display = 'block';
+    progress.style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Generate URLs';
+  }
+
+  function addRow(id, url, ok) {
+    var tbody = document.getElementById('results-body');
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + escHtml(id) + '</td>' +
+      '<td class="url-cell">' + (ok ? escHtml(url) : '<em>' + escHtml(url) + '</em>') + '</td>' +
+      '<td class="' + (ok ? 'status-ok' : 'status-err') + '">' + (ok ? '✓' : '✗') + '</td>' +
+      '<td class="copy-cell">' + (ok ? '<button onclick="copyUrl(\'' + escHtml(url) + '\')">Copy</button>' : '') + '</td>';
+    tbody.appendChild(tr);
+  }
+
+  function copyUrl(url) {
+    navigator.clipboard.writeText(url).catch(function() {
+      prompt('Copy this URL:', url);
+    });
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function getCSV() {
+    var lines = ['Contact ID,Consent Form URL,Status'];
+    results.forEach(function(r) {
+      lines.push('"' + r.id + '","' + r.url + '","' + (r.ok ? 'OK' : 'Error') + '"');
+    });
+    return lines.join('\n');
+  }
+
+  function downloadCSV() {
+    var csv  = getCSV();
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a    = document.createElement('a');
+    a.href   = URL.createObjectURL(blob);
+    a.download = 'consent-urls.csv';
+    a.click();
+  }
+
+  function copyCSV() {
+    navigator.clipboard.writeText(getCSV()).catch(function() {
+      prompt('Copy CSV:', getCSV());
+    });
+  }
+
+  function clearAll() {
+    document.getElementById('ids-input').value = '';
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('progress').style.display = 'none';
+    results = [];
+  }
+</script>
+</body>
+</html>
