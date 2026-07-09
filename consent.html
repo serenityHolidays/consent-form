@@ -181,7 +181,7 @@
 <div class="card">
 
   <script>
-    // Calls Cloudflare proxy functions — no CORS issues (UPDATED)
+    // Calls Cloudflare proxy functions — no CORS issues
     const GET_URL  = '/get-consent';
     const POST_URL = '/submit-consent';
 
@@ -229,8 +229,8 @@
 </div>
 
 <script>
-  function getContactId() {
-    return new URLSearchParams(window.location.search).get('contact_id') || '';
+  function getParam(name) {
+    return new URLSearchParams(window.location.search).get(name) || '';
   }
 
   function showError(msg) {
@@ -289,13 +289,15 @@
   }
 
   async function loadPreferences() {
-    var contactId = getContactId();
-    if (!contactId) {
-      showError('No contact ID found in the URL. Please use the link provided in your email.');
+    var contactId = getParam('contact_id');
+    var token     = getParam('token');
+
+    if (!contactId || !token) {
+      showError('This link is invalid or incomplete. Please use the link provided in your email.');
       return;
     }
     try {
-      var res  = await fetch(GET_URL + '?contact_id=' + encodeURIComponent(contactId));
+      var res  = await fetch(GET_URL + '?contact_id=' + encodeURIComponent(contactId) + '&token=' + encodeURIComponent(token));
       var data = await res.json();
       if (data.status === 'error') {
         showError(data.message || 'Could not load your preferences. Please try again later.');
@@ -309,18 +311,18 @@
   }
 
   async function savePreferences() {
-    var contactId = getContactId();
+    var contactId = getParam('contact_id');
+    var token     = getParam('token');
     var btn = document.getElementById('save-btn');
     btn.disabled = true;
     btn.textContent = 'Saving…';
 
-    var body = { contact_id: contactId };
+    var body = { contact_id: contactId, token: token };
     BRANDS.forEach(function(brand) {
       var cb = document.getElementById('cb_' + brand.id);
       body[brand.param] = cb ? String(cb.checked) : 'false';
     });
 
-    // Collect selected holiday preferences as semicolon-separated string
     var selectedPrefs = [];
     document.querySelectorAll('#prefs-chips input:checked').forEach(function(cb) {
       selectedPrefs.push(cb.value);
