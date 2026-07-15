@@ -7,199 +7,50 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: Georgia, 'Times New Roman', serif;
-      background: #fdf8f0;
-      color: #333;
-      min-height: 100vh;
-      padding: 40px 16px;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #e0d8cc;
-      border-radius: 4px;
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 40px;
-    }
-
+    body { font-family: Georgia, 'Times New Roman', serif; background: #fdf8f0; color: #333; min-height: 100vh; padding: 40px 16px; }
+    .card { background: #fff; border: 1px solid #e0d8cc; border-radius: 4px; max-width: 960px; margin: 0 auto; padding: 40px; }
     h1 { font-size: 1.5rem; font-weight: normal; margin-bottom: 8px; color: #222; }
-
     .subtitle { font-size: 0.9rem; color: #666; margin-bottom: 28px; line-height: 1.5; }
-
     label { display: block; font-size: 0.9rem; font-weight: bold; color: #444; margin-bottom: 6px; }
-
-    input[type="password"], input[type="text"] {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #d0c8bc;
-      border-radius: 3px;
-      font-family: monospace;
-      font-size: 0.9rem;
-      background: #fdfaf5;
-      color: #333;
-      margin-bottom: 20px;
-    }
-
-    input[type="password"]:focus, input[type="text"]:focus { outline: none; border-color: #6b5c3e; }
-
+    input[type="password"] { width: 100%; padding: 10px 12px; border: 1px solid #d0c8bc; border-radius: 3px; font-family: monospace; font-size: 0.9rem; background: #fdfaf5; color: #333; margin-bottom: 20px; }
+    input[type="password"]:focus { outline: none; border-color: #6b5c3e; }
     .divider { border: none; border-top: 1px solid #e8e0d4; margin: 24px 0; }
-
-    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #e0d8cc; }
-
-    .tab {
-      padding: 10px 20px;
-      font-size: 0.9rem;
-      font-family: inherit;
-      cursor: pointer;
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-      color: #888;
-    }
-
+    .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0d8cc; }
+    .tab { padding: 10px 20px; font-size: 0.9rem; font-family: inherit; cursor: pointer; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; color: #888; }
     .tab.active { color: #6b5c3e; border-bottom-color: #6b5c3e; font-weight: bold; }
-
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
-
-    .drop-zone {
-      border: 2px dashed #c8b99a;
-      border-radius: 4px;
-      padding: 40px;
-      text-align: center;
-      cursor: pointer;
-      background: #fdfaf5;
-      transition: border-color 0.2s, background 0.2s;
-      margin-bottom: 16px;
-    }
-
+    .drop-zone { border: 2px dashed #c8b99a; border-radius: 4px; padding: 40px; text-align: center; cursor: pointer; background: #fdfaf5; transition: border-color 0.2s, background 0.2s; margin-bottom: 16px; }
     .drop-zone:hover, .drop-zone.dragover { border-color: #6b5c3e; background: #f5ede0; }
-
     .drop-zone input[type="file"] { display: none; }
-
     .drop-zone-text { font-size: 0.95rem; color: #888; }
     .drop-zone-text strong { color: #6b5c3e; }
-
     .file-name { margin-top: 8px; font-size: 0.85rem; color: #555; font-family: monospace; }
-
-    textarea {
-      width: 100%;
-      height: 140px;
-      padding: 12px;
-      border: 1px solid #d0c8bc;
-      border-radius: 3px;
-      font-family: monospace;
-      font-size: 0.9rem;
-      resize: vertical;
-      background: #fdfaf5;
-      color: #333;
-      margin-bottom: 16px;
-    }
-
+    textarea { width: 100%; height: 140px; padding: 12px; border: 1px solid #d0c8bc; border-radius: 3px; font-family: monospace; font-size: 0.9rem; resize: vertical; background: #fdfaf5; color: #333; margin-bottom: 16px; }
     textarea:focus { outline: none; border-color: #6b5c3e; }
-
-    .btn {
-      display: inline-block;
-      padding: 12px 24px;
-      background: #6b5c3e;
-      color: #fff;
-      border: none;
-      border-radius: 3px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
+    .btn { display: inline-block; padding: 12px 24px; background: #6b5c3e; color: #fff; border: none; border-radius: 3px; font-size: 0.95rem; font-family: inherit; cursor: pointer; transition: background 0.2s; }
     .btn:hover:not(:disabled) { background: #554930; }
     .btn:disabled { background: #aaa; cursor: default; }
-
-    .btn-secondary {
-      background: #fff;
-      color: #6b5c3e;
-      border: 1px solid #6b5c3e;
-      margin-left: 8px;
-    }
-
+    .btn-secondary { background: #fff; color: #6b5c3e; border: 1px solid #6b5c3e; margin-left: 8px; }
     .btn-secondary:hover:not(:disabled) { background: #fdfaf5; }
-
     .progress { margin-top: 20px; font-size: 0.85rem; color: #888; display: none; }
-
-    .progress-bar-wrap {
-      width: 100%;
-      height: 6px;
-      background: #e8e0d4;
-      border-radius: 3px;
-      margin-top: 8px;
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      height: 100%;
-      background: #6b5c3e;
-      border-radius: 3px;
-      transition: width 0.2s;
-      width: 0%;
-    }
-
-    .alert {
-      margin-top: 16px;
-      padding: 12px 16px;
-      border-radius: 3px;
-      font-size: 0.9rem;
-      display: none;
-    }
-
+    .progress-bar-wrap { width: 100%; height: 6px; background: #e8e0d4; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #6b5c3e; border-radius: 3px; transition: width 0.3s; width: 0%; }
+    .alert { margin-top: 16px; padding: 12px 16px; border-radius: 3px; font-size: 0.9rem; display: none; }
     .alert.error { background: #fdecea; border: 1px solid #f5c6cb; color: #c62828; display: block; }
-
     .results-section { margin-top: 28px; display: none; }
-
-    .results-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
+    .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
     .results-title { font-size: 1rem; font-weight: bold; color: #444; }
     .results-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
     table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-
-    th {
-      background: #f5ede0;
-      padding: 10px 12px;
-      text-align: left;
-      font-weight: bold;
-      color: #555;
-      border-bottom: 2px solid #e0d8cc;
-    }
-
+    th { background: #f5ede0; padding: 10px 12px; text-align: left; font-weight: bold; color: #555; border-bottom: 2px solid #e0d8cc; }
     td { padding: 9px 12px; border-bottom: 1px solid #f0e8dc; vertical-align: middle; word-break: break-all; }
     tr:last-child td { border-bottom: none; }
     tr:nth-child(even) td { background: #fdfaf5; }
-
     .status-ok  { color: #2e7d32; font-weight: bold; white-space: nowrap; }
     .status-err { color: #c62828; font-weight: bold; white-space: nowrap; }
     .url-cell   { font-family: monospace; font-size: 0.75rem; color: #555; }
-
-    .copy-cell button {
-      padding: 4px 10px;
-      font-size: 0.78rem;
-      background: #fff;
-      border: 1px solid #c8b99a;
-      border-radius: 3px;
-      cursor: pointer;
-      color: #6b5c3e;
-      white-space: nowrap;
-    }
-
+    .copy-cell button { padding: 4px 10px; font-size: 0.78rem; background: #fff; border: 1px solid #c8b99a; border-radius: 3px; cursor: pointer; color: #6b5c3e; white-space: nowrap; }
     .copy-cell button:hover { background: #fdfaf5; }
   </style>
 </head>
@@ -218,30 +69,27 @@
     <button class="tab" onclick="switchTab('paste')">Paste IDs</button>
   </div>
 
-  <!-- CSV Upload Tab -->
   <div class="tab-panel active" id="tab-csv">
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+    <div class="drop-zone" id="drop-zone"
+         onclick="document.getElementById('file-input').click()"
          ondragover="event.preventDefault();this.classList.add('dragover')"
          ondragleave="this.classList.remove('dragover')"
          ondrop="handleDrop(event)">
       <input type="file" id="file-input" accept=".csv" onchange="handleFile(this.files[0])" />
-      <div class="drop-zone-text">
-        <strong>Click to choose</strong> or drag and drop your CSV file here
-      </div>
+      <div class="drop-zone-text"><strong>Click to choose</strong> or drag and drop your CSV file here</div>
       <div class="file-name" id="file-name"></div>
     </div>
     <p style="font-size:0.85rem;color:#888;margin-bottom:16px;">
-      The CSV must have a <strong>Record Id</strong> column (values like <code>zcrm_891627000002745001</code>)
-      and a <strong>Preference Link</strong> column. The Preference Link column will be populated with the generated URLs.
+      The CSV must have a <strong>Record Id</strong> column (e.g. <code>zcrm_891627000002745001</code>)
+      and a <strong>Preference Link</strong> column which will be populated with the generated URLs.
     </p>
     <button class="btn" id="generate-btn-csv" onclick="generateFromCSV()" disabled>Generate &amp; Download CSV</button>
     <button class="btn btn-secondary" onclick="clearCSV()">Clear</button>
   </div>
 
-  <!-- Paste Tab -->
   <div class="tab-panel" id="tab-paste">
     <label for="ids-input">Contact IDs (one per line — with or without <code>zcrm_</code> prefix)</label>
-    <textarea id="ids-input" placeholder="zcrm_891627000002745001&#10;891627000002745002&#10;zcrm_891627000002745003"></textarea>
+    <textarea id="ids-input" placeholder="zcrm_891627000002745001&#10;891627000002745002"></textarea>
     <button class="btn" id="generate-btn-paste" onclick="generateFromPaste()">Generate URLs</button>
     <button class="btn btn-secondary" onclick="clearPaste()">Clear</button>
   </div>
@@ -261,28 +109,22 @@
         <button class="btn" style="margin:0;padding:8px 16px;font-size:0.85rem;" onclick="copyCSV()">Copy as CSV</button>
       </div>
     </div>
+    <p style="font-size:0.82rem;color:#888;margin-bottom:10px;" id="preview-note"></p>
     <table>
-      <thead>
-        <tr>
-          <th>Contact ID</th>
-          <th>Consent Form URL</th>
-          <th>Status</th>
-          <th></th>
-        </tr>
-      </thead>
+      <thead><tr><th>Contact ID</th><th>Consent Form URL</th><th>Status</th><th></th></tr></thead>
       <tbody id="results-body"></tbody>
     </table>
   </div>
 </div>
 
 <script>
-  const GENERATE_URL = '/generate-token';
-  var results    = [];
-  var csvData    = null; // parsed CSV rows
-  var csvHeaders = [];
-  var csvFile    = null;
+  const BULK_URL   = '/generate-tokens-bulk';
+  const CHUNK_SIZE = 5000;
+  var results      = [];
+  var csvData      = null;
+  var csvHeaders   = [];
+  var csvFile      = null;
 
-  // ── Tabs ─────────────────────────────────────────────────────────────────
   function switchTab(name) {
     document.querySelectorAll('.tab').forEach(function(t, i) {
       t.classList.toggle('active', (i === 0 ? 'csv' : 'paste') === name);
@@ -292,7 +134,6 @@
     hideAlert();
   }
 
-  // ── File handling ─────────────────────────────────────────────────────────
   function handleDrop(e) {
     e.preventDefault();
     document.getElementById('drop-zone').classList.remove('dragover');
@@ -305,191 +146,180 @@
     csvFile = file;
     document.getElementById('file-name').textContent = file.name;
     Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
+      header: true, skipEmptyLines: true,
       complete: function(res) {
         csvHeaders = res.meta.fields;
         csvData    = res.data;
         var btn = document.getElementById('generate-btn-csv');
         if (!csvHeaders.includes('Record Id')) {
-          showAlert('CSV must have a "Record Id" column.');
-          btn.disabled = true;
+          showAlert('CSV must have a "Record Id" column.'); btn.disabled = true;
         } else if (!csvHeaders.includes('Preference Link')) {
-          showAlert('CSV must have a "Preference Link" column.');
-          btn.disabled = true;
+          showAlert('CSV must have a "Preference Link" column.'); btn.disabled = true;
         } else {
-          hideAlert();
-          btn.disabled = false;
+          hideAlert(); btn.disabled = false;
         }
       },
-      error: function() { showAlert('Could not parse CSV file. Please check the format.'); }
+      error: function() { showAlert('Could not parse CSV file.'); }
     });
   }
 
-  // ── Strip zcrm_ prefix ────────────────────────────────────────────────────
-  function cleanId(raw) {
-    return String(raw).replace(/^zcrm_/i, '').trim();
-  }
+  function cleanId(raw) { return String(raw).replace(/^zcrm_/i, '').trim(); }
 
-  // ── Core token fetch ──────────────────────────────────────────────────────
-  async function fetchToken(contactId, adminKey) {
-    var res  = await fetch(GENERATE_URL + '?contact_id=' + encodeURIComponent(contactId) + '&admin_key=' + encodeURIComponent(adminKey));
+  // Send one chunk of IDs to the bulk endpoint
+  async function fetchBulk(ids, adminKey) {
+    var res  = await fetch(BULK_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ admin_key: adminKey, contact_ids: ids })
+    });
     var data = await res.json();
-    if (data.status === 'success') return { ok: true, url: data.url };
-    return { ok: false, url: data.message || 'Error' };
+    if (data.status !== 'success') throw new Error(data.message || 'Bulk request failed');
+    return data.results; // [{ contact_id, token, url }]
   }
 
-  // ── Progress helpers ──────────────────────────────────────────────────────
-  function showProgress(current, total) {
+  function setProgress(current, total, label) {
     var el = document.getElementById('progress');
     el.style.display = 'block';
-    document.getElementById('progress-text').textContent = 'Processing ' + current + ' of ' + total + '…';
+    document.getElementById('progress-text').textContent = label || ('Processing batch ' + current + ' of ' + total + '…');
     document.getElementById('progress-bar').style.width = Math.round((current / total) * 100) + '%';
   }
 
   function hideProgress() { document.getElementById('progress').style.display = 'none'; }
 
-  // ── Generate from CSV ─────────────────────────────────────────────────────
+  // Process an array of clean numeric IDs, returns map of id -> url
+  async function processIds(cleanIds, adminKey) {
+    var urlMap  = {};
+    var total   = Math.ceil(cleanIds.length / CHUNK_SIZE);
+    var batches = [];
+    for (var i = 0; i < cleanIds.length; i += CHUNK_SIZE) {
+      batches.push(cleanIds.slice(i, i + CHUNK_SIZE));
+    }
+    for (var b = 0; b < batches.length; b++) {
+      setProgress(b + 1, batches.length);
+      var batchResults = await fetchBulk(batches[b], adminKey);
+      batchResults.forEach(function(r) { urlMap[r.contact_id] = r.url; });
+    }
+    return urlMap;
+  }
+
   async function generateFromCSV() {
     var adminKey = document.getElementById('admin-key').value.trim();
     if (!adminKey) { showAlert('Please enter the admin key.'); return; }
     if (!csvData || !csvData.length) { showAlert('Please upload a CSV file first.'); return; }
 
     var btn = document.getElementById('generate-btn-csv');
-    btn.disabled = true;
-    btn.textContent = 'Generating…';
-    hideAlert();
-    results = [];
+    btn.disabled = true; btn.textContent = 'Generating…';
+    hideAlert(); results = [];
     document.getElementById('results-body').innerHTML = '';
     document.getElementById('results-section').style.display = 'none';
 
-    var updatedRows = [];
-    var okCount = 0;
+    // Extract clean IDs
+    var cleanIds = csvData.map(function(row) { return cleanId(row['Record Id'] || ''); }).filter(Boolean);
 
-    for (var i = 0; i < csvData.length; i++) {
-      showProgress(i + 1, csvData.length);
-      var row       = Object.assign({}, csvData[i]);
-      var rawId     = row['Record Id'] || '';
-      var contactId = cleanId(rawId);
-      var result;
+    try {
+      var urlMap      = await processIds(cleanIds, adminKey);
+      var updatedRows = [];
+      var okCount     = 0;
 
-      if (!contactId) {
-        result = { ok: false, url: 'Missing ID' };
-      } else {
-        try { result = await fetchToken(contactId, adminKey); }
-        catch(e) { result = { ok: false, url: 'Network error' }; }
-      }
+      csvData.forEach(function(row) {
+        var updated   = Object.assign({}, row);
+        var contactId = cleanId(row['Record Id'] || '');
+        var url       = urlMap[contactId] || '';
+        updated['Preference Link'] = url;
+        updatedRows.push(updated);
+        var ok = !!url;
+        if (ok) okCount++;
+        results.push({ id: contactId, url: url, ok: ok });
+      });
 
-      if (result.ok) {
-        row['Preference Link'] = result.url;
-        okCount++;
-      }
-      updatedRows.push(row);
-      results.push({ id: contactId || rawId, url: result.url, ok: result.ok });
-      addRow(contactId || rawId, result.url, result.ok);
+      // Auto-download
+      var csv = Papa.unparse(updatedRows, { columns: csvHeaders });
+      downloadBlob(csv, (csvFile ? csvFile.name.replace('.csv','') : 'contacts') + '-with-links.csv');
+
+      renderResults(okCount, csvData.length);
+    } catch (err) {
+      showAlert('Error: ' + err.message);
     }
 
     hideProgress();
-    document.getElementById('results-title').textContent = okCount + ' of ' + csvData.length + ' URLs generated';
-    document.getElementById('results-section').style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Generate & Download CSV';
-
-    // Auto-download updated CSV
-    var csv = Papa.unparse(updatedRows, { columns: csvHeaders });
-    downloadBlob(csv, (csvFile ? csvFile.name.replace('.csv','') : 'contacts') + '-with-links.csv');
+    btn.disabled = false; btn.textContent = 'Generate & Download CSV';
   }
 
-  // ── Generate from paste ───────────────────────────────────────────────────
   async function generateFromPaste() {
     var adminKey = document.getElementById('admin-key').value.trim();
     if (!adminKey) { showAlert('Please enter the admin key.'); return; }
-
     var raw = document.getElementById('ids-input').value.trim();
     if (!raw) { showAlert('Please enter at least one Contact ID.'); return; }
 
-    var ids = raw.split('\n').map(function(s){ return cleanId(s); }).filter(Boolean);
-    if (!ids.length) return;
-
+    var cleanIds = raw.split('\n').map(function(s){ return cleanId(s); }).filter(Boolean);
     var btn = document.getElementById('generate-btn-paste');
-    btn.disabled = true;
-    btn.textContent = 'Generating…';
-    hideAlert();
-    results = [];
+    btn.disabled = true; btn.textContent = 'Generating…';
+    hideAlert(); results = [];
     document.getElementById('results-body').innerHTML = '';
     document.getElementById('results-section').style.display = 'none';
 
-    for (var i = 0; i < ids.length; i++) {
-      showProgress(i + 1, ids.length);
-      var id = ids[i];
-      var result;
-      try { result = await fetchToken(id, adminKey); }
-      catch(e) { result = { ok: false, url: 'Network error' }; }
-      results.push({ id: id, url: result.url, ok: result.ok });
-      addRow(id, result.url, result.ok);
+    try {
+      var urlMap  = await processIds(cleanIds, adminKey);
+      var okCount = 0;
+      cleanIds.forEach(function(id) {
+        var url = urlMap[id] || '';
+        var ok  = !!url;
+        if (ok) okCount++;
+        results.push({ id: id, url: url, ok: ok });
+      });
+      renderResults(okCount, cleanIds.length);
+    } catch (err) {
+      showAlert('Error: ' + err.message);
     }
 
-    var ok = results.filter(function(r){ return r.ok; }).length;
-    document.getElementById('results-title').textContent = ok + ' of ' + ids.length + ' URLs generated';
-    document.getElementById('results-section').style.display = 'block';
     hideProgress();
-    btn.disabled = false;
-    btn.textContent = 'Generate URLs';
+    btn.disabled = false; btn.textContent = 'Generate URLs';
   }
 
-  // ── Table row ─────────────────────────────────────────────────────────────
+  function renderResults(okCount, total) {
+    var PREVIEW = 200;
+    var toShow  = results.slice(0, PREVIEW);
+    var tbody   = document.getElementById('results-body');
+    tbody.innerHTML = '';
+    toShow.forEach(function(r) { addRow(r.id, r.url, r.ok); });
+
+    document.getElementById('results-title').textContent = okCount + ' of ' + total + ' URLs generated';
+    document.getElementById('preview-note').textContent  =
+      total > PREVIEW ? 'Showing first ' + PREVIEW + ' of ' + total + ' rows. Download CSV for the full list.' : '';
+    document.getElementById('results-section').style.display = 'block';
+  }
+
   function addRow(id, url, ok) {
     var tbody = document.getElementById('results-body');
     var tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' + escHtml(id) + '</td>' +
-      '<td class="url-cell">' + (ok ? escHtml(url) : '<em>' + escHtml(url) + '</em>') + '</td>' +
+      '<td class="url-cell">' + (ok ? escHtml(url) : '<em>Error</em>') + '</td>' +
       '<td class="' + (ok ? 'status-ok' : 'status-err') + '">' + (ok ? '✓' : '✗') + '</td>' +
       '<td class="copy-cell">' + (ok ? '<button onclick="copyUrl(\'' + escHtml(url) + '\')">Copy</button>' : '') + '</td>';
     tbody.appendChild(tr);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function showAlert(msg) {
-    var el = document.getElementById('alert');
-    el.className = 'alert error';
-    el.textContent = msg;
-  }
-
-  function hideAlert() {
-    document.getElementById('alert').className = 'alert';
-  }
-
-  function copyUrl(url) {
-    navigator.clipboard.writeText(url).catch(function() { prompt('Copy URL:', url); });
-  }
-
-  function escHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+  function showAlert(msg) { var el = document.getElementById('alert'); el.className = 'alert error'; el.textContent = msg; }
+  function hideAlert() { document.getElementById('alert').className = 'alert'; }
+  function copyUrl(url) { navigator.clipboard.writeText(url).catch(function() { prompt('Copy URL:', url); }); }
+  function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function downloadBlob(content, filename) {
     var blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
   }
 
   function downloadResultsCSV() {
     var lines = ['Contact ID,Consent Form URL,Status'];
-    results.forEach(function(r) {
-      lines.push('"' + r.id + '","' + r.url + '","' + (r.ok ? 'OK' : 'Error') + '"');
-    });
+    results.forEach(function(r) { lines.push('"' + r.id + '","' + r.url + '","' + (r.ok ? 'OK' : 'Error') + '"'); });
     downloadBlob(lines.join('\n'), 'consent-urls.csv');
   }
 
   function copyCSV() {
     var lines = ['Contact ID,Consent Form URL,Status'];
-    results.forEach(function(r) {
-      lines.push('"' + r.id + '","' + r.url + '","' + (r.ok ? 'OK' : 'Error') + '"');
-    });
-    navigator.clipboard.writeText(lines.join('\n')).catch(function() { prompt('Copy CSV:', lines.join('\n')); });
+    results.forEach(function(r) { lines.push('"' + r.id + '","' + r.url + '","' + (r.ok ? 'OK' : 'Error') + '"'); });
+    navigator.clipboard.writeText(lines.join('\n')).catch(function() { prompt('Copy:', lines.join('\n')); });
   }
 
   function clearCSV() {
