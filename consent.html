@@ -206,7 +206,7 @@
   <div id="form-content" style="display:none;">
     <h1>Your Marketing Preferences</h1>
     <p class="subtitle">
-      Hello <span id="contact-name" class="contact-name"></span>. Please tick the
+      Hello <!--<span id="contact-name" class="contact-name"></span>-->. Please tick the
       brands you would like to hear from by email, then click Save.
     </p>
     <div id="brands-container"></div>
@@ -242,7 +242,7 @@
   function showForm(data) {
     document.getElementById('loading').style.display = 'none';
     var name = [data.first_name, data.last_name].filter(Boolean).join(' ') || 'there';
-    document.getElementById('contact-name').textContent = name;
+    /*document.getElementById('contact-name').textContent = name;*/
 
     var container = document.getElementById('brands-container');
     container.innerHTML = '';
